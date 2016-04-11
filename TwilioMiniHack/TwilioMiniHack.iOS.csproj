@@ -119,6 +119,7 @@
     <Compile Include="MessageCell.designer.cs">
       <DependentUpon>MessageCell.cs</DependentUpon>
     </Compile>
+    <Compile Include="MessagesDataSource.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
 </Project>
