@@ -65,19 +65,10 @@ Search for "Twilio IP Messaging" in the `Add Packages` dialog and check the boxe
 Now that we have Twilio IP Messaging in our project, let's add the following `using` statements to the top of ViewController.cs:
 
 ```csharp
-using System.Threading.Tasks;
-using System.Net.Http;
-using System.Json;
-using System.Collections.Generic;
-
 // For IP Messaging
 using Twilio.Common;
 using Twilio.IPMessaging;
 ```
-
-We also need to add references to `System.Net.Http` and `System.Json` to the project. Right-click on the `References` node in the `TwilioMiniHack.iOS` project and click `Edit references...`. In the `Edit References` dialog check the boxes next to  the `System.Net.Http` and `System.Json` references and click the `OK` button:
-
-![Edit References](http://i.imgur.com/e6xukUR.png)
 
 In `ViewController.cs`, let's configure the `ViewController` it so that it implements the following interfaces:
 
