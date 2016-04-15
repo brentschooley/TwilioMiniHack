@@ -173,7 +173,7 @@ async Task<string> GetToken ()
 {
     var deviceId = UIDevice.CurrentDevice.IdentifierForVendor.AsString ();
 
-    var tokenEndpoint = $"https://{{your server URL and port}}/token.php?device={deviceId}";
+    var tokenEndpoint = $"https://YOUR_TOKEN_SERVER_URL/token.php?device={deviceId}";
 
     var http = new HttpClient ();
     var data = await http.GetStringAsync (tokenEndpoint);
@@ -287,3 +287,29 @@ public void ScrollToBottomMessage()
 ```
 
 With this in place we can send and receive messages on the general channel and have a functioning chat app in iOS! Explore the [Twiliio Docs](http://twilio.com/docs/api/ip-messaging) to find out what else you can do with your application. Show your completed application to a Xamarin to get credit for this mini hack. If you want, you can continue on to the Android implementation.
+
+Android
+=======
+<a name="android"></a>Alright Android warrior, are you ready to build a chat application?  Wonderful!
+
+Start by finding the Android project we've provided in the hack solution:
+
+![Android Project Highlight](http://i.imgur.com/RoVLjvD.png)
+
+This project has the main user interface objects for our chat app already created in `Resources/layout/Main.axml` and `Resources/layout/MessageItemLayout.axml`. What we'll do over the next few minutes is light up those UI objects with Twilio IP Messaging.
+
+To get started, let's add the Twilio IP Messaging NuGet packages. Right-click on the `Packages` node inside the `TwilioMiniHack.Android` project and select `Add packages...`:
+
+![Add packages](http://i.imgur.com/IdwaUTH.png)
+
+Search for "Twilio IP Messaging" in the `Add Packages` dialog and check the boxes next to "Twilio IP Messaging for Xamarin" and "Twilio Common Library for Xamarin" and click the `Add Package` button in the bottom-right:
+
+![Packages dialog](http://i.imgur.com/x6M75X3.png)
+
+Now that we have Twilio IP Messaging in our project, let's add the following `using` statements to the top of `MainActivity.cs`:
+
+```csharp
+// For IP Messaging
+using Twilio.Common;
+using Twilio.IPMessaging;
+```
