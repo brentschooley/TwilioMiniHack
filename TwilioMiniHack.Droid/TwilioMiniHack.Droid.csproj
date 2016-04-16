@@ -43,12 +43,6 @@
     <Reference Include="Mono.Android" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Json" />
-    <Reference Include="Twilio.Common.Android">
-      <HintPath>..\packages\Twilio.Common.Xamarin.0.3.0\lib\MonoAndroid403\Twilio.Common.Android.dll</HintPath>
-    </Reference>
-    <Reference Include="Twilio.IPMessaging.Android">
-      <HintPath>..\packages\Twilio.IPMessaging.Xamarin.0.14.0\lib\MonoAndroid403\Twilio.IPMessaging.Android.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainActivity.cs" />
@@ -59,7 +53,6 @@
     <None Include="Resources\AboutResources.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="Assets\AboutAssets.txt" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\Main.axml" />

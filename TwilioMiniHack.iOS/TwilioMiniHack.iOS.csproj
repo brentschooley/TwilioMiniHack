@@ -83,14 +83,8 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="Xamarin.iOS" />
-    <Reference Include="Twilio.Common.iOS">
-      <HintPath>..\packages\Twilio.Common.Xamarin.0.3.0\lib\Xamarin.iOS10\Twilio.Common.iOS.dll</HintPath>
-    </Reference>
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Json" />
-    <Reference Include="Twilio.IPMessaging.iOS">
-      <HintPath>..\packages\Twilio.IPMessaging.Xamarin.0.136.040.1\lib\Xamarin.iOS10\Twilio.IPMessaging.iOS.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ImageAsset Include="Assets.xcassets\AppIcons.appiconset\Contents.json" />
@@ -106,7 +100,6 @@
   <ItemGroup>
     <None Include="Info.plist" />
     <None Include="Entitlements.plist" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
