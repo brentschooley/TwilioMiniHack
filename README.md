@@ -1,4 +1,3 @@
-
 Twilio Mini Hack
 ===
 Welcome, fine adventurer to the Twilio Mini Hack.  This simple hack will introduce you to [Twilio IP Messaging](https://twilio.com/ip-messaging) which allows you to build chat functionality into your native iOS and Android applications without having to build and scale a backend infrastructure.  
@@ -286,7 +285,7 @@ public void ScrollToBottomMessage()
 }
 ```
 
-With this in place we can send and receive messages on the general channel and have a functioning chat app in iOS! Explore the [Twiliio Docs](http://twilio.com/docs/api/ip-messaging) to find out what else you can do with your application. Show your completed application to a Xamarin to get credit for this mini hack. If you want, you can continue on to the Android implementation.
+With this in place we can send and receive messages on the general channel and have a functioning chat app in iOS! Explore the [Twilio Docs](http://twilio.com/docs/api/ip-messaging) to find out what else you can do with your application. Show your completed application to a Xamarin to get credit for this mini hack. If you want, you can continue on to the Android implementation.
 
 Android
 =======
@@ -313,3 +312,309 @@ Now that we have Twilio IP Messaging in our project, let's add the following `us
 using Twilio.Common;
 using Twilio.IPMessaging;
 ```
+
+Let's update `MainActivity` to set the `Label` attribute to "#general" and implement the IPMessagingClientListener, IChannelListener, and ITwilioAccessManagerListener interfaces. We'll also add a `TAG` for logging. We'll also declare the instance variables we'll need for the app:
+
+```csharp
+[Activity(Label = "#general", MainLauncher = true, Icon = "@mipmap/icon")]
+public class MainActivity : Activity, IPMessagingClientListener, IChannelListener, ITwilioAccessManagerListener
+{
+	internal const string TAG = "TWILIO";
+
+		Button sendButton;
+		EditText textMessage;
+		ListView listView;
+		MessagesAdapter adapter;
+
+		ITwilioIPMessagingClient client;
+		IChannel generalChannel;
+
+	// ...
+
+}
+```
+
+`IPMessagingClientListener` handles the events we receive from the IP Messaging service, IChannelListener listens for channel-related events, while `ITwilioAccessManagerListener` is used to coordinate authentication events with the chat  service. We'll add the methods to implement these interfaces as we go along.
+
+Since this is a chat app and we'll be doing a lot of work with messages, let's create a class that will help manage them for our list view. This class will be a list view Adapter that will store our `Message` objects and will provide our list view with the information it needs to display them in a list.
+
+Create a new class and call it `MessagesAdapter`. Replace the template code in this class with the following:
+
+```csharp
+using Android.App;
+using Android.Widget;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Json;
+using System.Threading.Tasks;
+using Twilio.IPMessaging;
+
+namespace TwilioMiniHack.Droid
+{
+	class MessagesAdapter : BaseAdapter<IMessage>
+	{
+		public MessagesAdapter(Activity parentActivity)
+		{
+			activity = parentActivity;
+		}
+
+		List<IMessage> messages = new List<IMessage>();
+		Activity activity;
+	}
+}
+```
+
+We'll need the ability to add messages to the list as they come in so let's add that to `MessagesAdapter`:
+
+```csharp
+public void AddMessage(IMessage msg)
+{
+	lock (messages)
+	{
+		messages.Add(msg);
+	}
+
+	activity.RunOnUiThread(() =>
+	   NotifyDataSetChanged());
+}
+```
+
+Finally, we need the `GetItemId`, `GetView`, and `Count` method overrides that configure our adapter to display the messages. Add these to `MessagesAdapter`:
+
+```csharp
+public override long GetItemId(int position)
+{
+	return position;
+}
+
+public override Android.Views.View GetView(int position, Android.Views.View convertView, Android.Views.ViewGroup parent)
+{
+	var view = convertView as LinearLayout ?? activity.LayoutInflater.Inflate(Resource.Layout.MessageItemLayout, null) as LinearLayout;
+	var msg = messages[position];
+
+	view.FindViewById<TextView>(Resource.Id.authorTextView).Text = msg.Author;
+	view.FindViewById<TextView>(Resource.Id.messageTextView).Text = msg.MessageBody;
+
+	return view;
+}
+
+public override int Count { get { return messages.Count; } }
+public override IMessage this[int index] { get { return messages[index]; } }
+```
+
+The `GetView` method uses the `MessageItemLayout` layout that's already provided in the mini hack and configures it using the `Message` info.
+
+Now that our `MessagesAdapter` is good to go let's get our UI set up for the chat app. Replace your `OnCreate` method with the following code:
+
+```csharp
+protected async override void OnCreate(Bundle savedInstanceState)
+{
+	base.OnCreate(savedInstanceState);
+
+	this.ActionBar.Subtitle = "logging in...";
+
+	// Set our view from the "main" layout resource
+	SetContentView(Resource.Layout.Main);
+
+	sendButton = FindViewById<Button>(Resource.Id.sendButton);
+	textMessage = FindViewById<EditText>(Resource.Id.messageTextField);
+	listView = FindViewById<ListView>(Resource.Id.listView);
+
+	adapter = new MessagesAdapter(this);
+	listView.Adapter = adapter;
+}
+```
+
+Here we're setting the `ActionBar` subtitle to indicate we're in the logging in phase of the app. Then we find the send button, message text and list view objects from our layout. Finally we set the list view's adapter to the `MessagesAdapter` we created earlier.
+
+Our UI is ready to go and it's now time to connect it to Twilio IP Messaging.
+
+### Connecting to Twilio IP Messaging
+
+First, let's add a method that will fetch our token and identity:
+
+```csharp
+async Task<string> GetIdentity()
+{
+	var androidId = Android.Provider.Settings.Secure.GetString(ContentResolver,
+						Android.Provider.Settings.Secure.AndroidId);
+
+	var tokenEndpoint = $"https://YOUR_TOKEN_URL/token.php?device={androidId}";
+
+	var http = new HttpClient();
+	var data = await http.GetStringAsync(tokenEndpoint);
+
+	var json = System.Json.JsonObject.Parse(data);
+
+	var identity = json["identity"]?.ToString()?.Trim('"');
+	this.ActionBar.Subtitle = $"Logged in as {identity}";
+	var token = json["token"]?.ToString()?.Trim('"');
+
+	return token;
+}
+```
+
+We pass in the `androidId` as a unique identifier and we're returned a token that includes our identity. Excellent, now let's go back to `OnCreate` and create the IP Messaging client using the token. Add the following code to `ViewDidLoad` to initialize the SDK and call a `Setup` method that we'll add in the next step:
+
+```csharp
+TwilioIPMessagingSDK.SetLogLevel((int)Android.Util.LogPriority.Debug);
+
+if (!TwilioIPMessagingSDK.IsInitialized)
+{
+	Console.WriteLine("Initialize");
+
+	TwilioIPMessagingSDK.InitializeSDK(this, new InitListener
+	{
+		InitializedHandler = async delegate
+		{
+			await Setup();
+		},
+		ErrorHandler = err =>
+		{
+			Console.WriteLine(err.Message);
+		}
+	});
+}
+else {
+	await Setup();
+}
+```
+
+Next, we'll add the `Setup` method:
+
+```csharp
+async Task Setup()
+{
+	var token = await GetIdentity();
+	var accessManager = TwilioAccessManagerFactory.CreateAccessManager(token, this);
+	client = TwilioIPMessagingSDK.CreateIPMessagingClientWithAccessManager(accessManager, this);
+
+	client.Channels.LoadChannelsWithListener(new StatusListener
+	{
+		SuccessHandler = () =>
+		{
+			generalChannel = client.Channels.GetChannelByUniqueName("general");
+
+			if (generalChannel != null)
+			{
+				generalChannel.Listener = this;
+				JoinGeneralChannel();
+			}
+			else
+			{
+				CreateAndJoinGeneralChannel();
+			}
+		}
+	});
+}
+```
+
+The `Setup` method requests the token and identity using `GetIdentity` and then uses the token to create and `AccessManager`. The `AccessManager` is then used to create an IP Messaging client object. Next, it uses the `client` to request a list of channels and checks to see if a channel named `general` exists. If it does, it joins it using `JoinGeneralChannel` and if it doesn't if creates it and joins it using `CreateAndJoinGeneralChannel`. Let's add those two methods now as well as the override methods to handle the AccessManager events:
+
+```csharp
+public void OnTokenExpired(ITwilioAccessManager p0)
+{
+	Console.WriteLine("token expired");
+}
+
+public void OnTokenUpdated(ITwilioAccessManager p0)
+{
+	Console.WriteLine("token updated");
+}
+
+void JoinGeneralChannel()
+{
+	generalChannel.Join(new StatusListener
+	{
+		SuccessHandler = () =>
+		{
+			RunOnUiThread(() =>
+			   Toast.MakeText(this, "Joined general channel!", ToastLength.Short).Show());
+		}
+	});
+}
+
+void CreateAndJoinGeneralChannel()
+{
+	var options = new Dictionary<string, Java.Lang.Object>();
+	options["friendlyName"] = "General Chat Channel";
+	options["ChannelType"] = ChannelChannelType.ChannelTypePublic;
+	client.Channels.CreateChannel(options, new CreateChannelListener
+	{
+		OnCreatedHandler = channel =>
+		{
+			generalChannel = channel;
+			channel.SetUniqueName("general", new StatusListener
+			{
+				SuccessHandler = () => { Console.WriteLine("set unique name successfully!"); }
+			});
+			this.JoinGeneralChannel();
+		},
+		OnErrorHandler = () => { }
+	});
+}
+```
+
+You may have noticed that the `CreateAndJoinGeneralChannel` method uses a `CreateChannelListener` class. We need to add that since it only exists as an abstract class in the IP Messaging SDK. Add this class to your MainActivity.cs file:
+
+```csharp
+public class CreateChannelListener : ConstantsCreateChannelListener
+{
+	public Action<IChannel> OnCreatedHandler { get; set; }
+	public Action OnErrorHandler { get; set; }
+
+	public override void OnCreated(IChannel channel)
+	{
+		OnCreatedHandler?.Invoke(channel);
+	}
+
+	public override void OnError(IErrorInfo errorInfo)
+	{
+		base.OnError(errorInfo);
+	}
+}
+```
+
+Now we need to add code to send a message when the `sendButton` is tapped. In `OnCreate` add the following line:
+
+```csharp
+sendButton.Click += ButtonSend_Click;
+```
+
+Next, add the button click handler function:
+
+```csharp
+void ButtonSend_Click(object sender, EventArgs e)
+{
+	if (!string.IsNullOrWhiteSpace(textMessage.Text))
+	{
+		var msg = generalChannel.Messages.CreateMessage(textMessage.Text);
+
+		generalChannel.Messages.SendMessage(msg, new StatusListener
+		{
+			SuccessHandler = () =>
+			{
+				RunOnUiThread(() =>
+				{
+					textMessage.Text = string.Empty;
+				});
+			}
+		});
+	}
+}
+```
+
+This button will allow us to send messages but what about when we receive messages in the channel? Let's add some code to handle that now. When a message is sent to the channel we'll use a method that handles the `OnMessageAdd` event to load it into the Adapter for our Messages and scroll it into view:
+
+```csharp
+public void OnMessageAdd(IMessage message)
+{
+	adapter.AddMessage(message);
+	listView.SmoothScrollToPosition(adapter.Count - 1);
+}
+```
+
+One more thing, make sure to right-click on any of the interfaces we haven't fully implement and select "Implement interface" to put in default stubs for each of them.
+
+With this in place we can send and receive messages on the general channel and have a functioning chat app in Android! Explore the [Twilio Docs](http://twilio.com/docs/api/ip-messaging) to find out what else you can do with your application. Show your completed application to a Xamarin to get credit for this mini hack.
