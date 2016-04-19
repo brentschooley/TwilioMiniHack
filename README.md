@@ -1,6 +1,6 @@
 Twilio Mini Hack
 ===
-Welcome, fine adventurer to the Twilio Mini Hack.  This simple hack will introduce you to [Twilio IP Messaging](https://twilio.com/ip-messaging) which allows you to build chat functionality into your native iOS and Android applications without having to build and scale a backend infrastructure.  
+Welcome fine adventurer to the Twilio Mini Hack.  This simple hack will introduce you to [Twilio IP Messaging](https://twilio.com/ip-messaging) which allows you to build chat functionality into your native iOS and Android applications without having to build and scale a backend infrastructure.  
 
 Once you've completed this minihack in a short period of time you'll have a fully functioning chat application that works on the web, iOS and Android.
 
