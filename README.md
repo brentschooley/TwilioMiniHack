@@ -140,10 +140,19 @@ MessagesDataSource dataSource;
 
 public async override void ViewDidLoad ()
 {
-    base.ViewDidLoad ();
-    // Perform any additional setup after loading the view, typically from a nib.
+    base.ViewDidLoad();
 
-    dataSource = new MsgsDataSource ();
+    // Perform any additional setup after loading the view, typically from a nib.
+    NSNotificationCenter.DefaultCenter.AddObserver(UIKeyboard.WillShowNotification, KeyboardWillShow);
+    NSNotificationCenter.DefaultCenter.AddObserver(UIKeyboard.DidShowNotification, KeyboardDidShow);
+    NSNotificationCenter.DefaultCenter.AddObserver(UIKeyboard.WillHideNotification, KeyboardWillHide);
+
+    this.View.AddGestureRecognizer(new UITapGestureRecognizer(() =>
+    {
+      this.messageTextField.ResignFirstResponder();
+    }));
+
+    dataSource = new MessagesDataSource ();
     tableView.Source = dataSource;
     tableView.RowHeight = UITableView.AutomaticDimension;
     tableView.EstimatedRowHeight = 70;
@@ -158,7 +167,7 @@ First, let's add some instance variables to our `ViewController` class to keep t
 
 ```csharp
 // Our chat client
-TwilioIPMessagingClient twilio;
+TwilioIPMessagingClient client;
 // The channel we'll chat in
 Channel generalChannel;
 // Our username when we connect
@@ -209,7 +218,7 @@ public void Error(Twilio.Common.TwilioAccessManager accessManager, Foundation.NS
 }
 ```
 
-Now let's use the IP Messaging client to get a list of channels and either join the `general` channel if it already exists or create it if it doesn't:
+Now let's use the IP Messaging client to get a list of channels and either join the `general` channel if it already exists or create it if it doesn't. Add this code to the bottom of `ViewDidLoad`:
 
 ```csharp
 client.GetChannelsList ((result, channels) => {
@@ -270,18 +279,6 @@ public void MessageAdded(TwilioIPMessagingClient client, Channel channel, Messag
 	{
 		ScrollToBottomMessage();
 	}
-}
-
-
-public void ScrollToBottomMessage()
-{
-	if (dataSource.Messages.Count == 0)
-	{
-		return;
-	}
-
-	var bottomIndexPath = NSIndexPath.FromRowSection(this.tableView.NumberOfRowsInSection(0) - 1, 0);
-	this.tableView.ScrollToRow(bottomIndexPath, UITableViewScrollPosition.Bottom, true);
 }
 ```
 
@@ -455,7 +452,7 @@ async Task<string> GetIdentity()
 }
 ```
 
-We pass in the `androidId` as a unique identifier and we're returned a token that includes our identity. Excellent, now let's go back to `OnCreate` and create the IP Messaging client using the token. Add the following code to `ViewDidLoad` to initialize the SDK and call a `Setup` method that we'll add in the next step:
+We pass in the `androidId` as a unique identifier and we're returned a token that includes our identity. Excellent, now let's go back to `OnCreate` and create the IP Messaging client using the token. Add the following code to `OnCreate` to initialize the SDK and call a `Setup` method that we'll add in the next step:
 
 ```csharp
 TwilioIPMessagingSDK.SetLogLevel((int)Android.Util.LogPriority.Debug);
