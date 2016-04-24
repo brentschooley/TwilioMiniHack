@@ -34,7 +34,7 @@ You're back! Fantastic. Let’s move on to the second thing you'll need.
 
 To make all of this work we will need some server code to generate access tokens. An access token tells Twilio who a chat user is and what they can and can't do within the IP Messaging service. You can find out more about access tokens [here](https://www.twilio.com/docs/api/ip-messaging/guides/identity).
 
-Head over to [this guide](https://github.com/TwilioDevEd/ipm-quickstart-csharp) and follow the instructions to get the ASP.NET version of our quickstart working on your machine. If you'd like to use a different backend language, you can find a full list of quickstart servers [here](https://www.twilio.com/docs/api/ip-messaging/guides/quickstart-js).
+If you're on Windows, head over to [this guide](https://github.com/TwilioDevEd/ipm-quickstart-csharp) and follow the instructions to get the ASP.NET version of our quickstart working on your machine. The ASP.NET quickstart server won't run properly in Xamarin Studio so if you're on a Mac or you'd like to use a different backend language on Windows you'll need to head [here](https://www.twilio.com/docs/api/ip-messaging/guides/quickstart-js) and choose a language of your choice from the list of available quickstart servers.
 
 Once you have it set up correctly, open it in your browser and you should be looking at a chat application. You've been granted an access token by the server and assigned a random username. We'll use this same server infrastructure to request a token for our mobile application so keep it running and keep the URL handy. I'll refer to this URL later as `YOUR_TOKEN_SERVER_URL`.
 
@@ -198,6 +198,7 @@ We pass in the device ID as a unique identifier and we're returned a token that 
 
 ```csharp
 var token = await GetToken ();
+this.NavigationItem.Prompt = $"Logged in as ${identity}";
 var accessManager = TwilioAccessManager.Create (token, this);
 client = TwilioIPMessagingClient.Create (accessManager, this);
 ```
@@ -612,6 +613,6 @@ public void OnMessageAdd(IMessage message)
 }
 ```
 
-One more thing, make sure to right-click on any of the interfaces we haven't fully implement and select "Implement interface" to put in default stubs for each of them.
+One more thing, make sure to right-click on IPMessagingClientListener, IChannelListener and ITwilioAccessManagerListener interfaces and select "Implement interface" to put in default stubs for each of their methods that we haven't implemented.
 
 With this in place we can send and receive messages on the general channel and have a functioning chat app in Android! Explore the [Twilio Docs](http://twilio.com/docs/api/ip-messaging) to find out what else you can do with your application. Show your completed application to a Xamarin to get credit for this mini hack.
