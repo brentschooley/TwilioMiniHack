@@ -198,7 +198,7 @@ We pass in the device ID as a unique identifier and we're returned a token that 
 
 ```csharp
 var token = await GetToken ();
-this.NavigationItem.Prompt = $"Logged in as ${identity}";
+this.NavigationItem.Prompt = $"Logged in as {identity}";
 var accessManager = TwilioAccessManager.Create (token, this);
 client = TwilioIPMessagingClient.Create (accessManager, this);
 ```
